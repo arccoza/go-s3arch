@@ -5,8 +5,11 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"bufio"
 	"strings"
+	"bytes"
 	// "fmt"
 	"github.com/blevesearch/segment"
+	"github.com/kljensen/snowball"
+	"github.com/arccoza/go-s3arch/pkg/stopwords"
 )
 
 func StemText(text string) string {
@@ -15,9 +18,11 @@ func StemText(text string) string {
 	scanner := bufio.NewScanner(strings.NewReader(text))
 	scanner.Split(SplitterGen([5]bool{true, false, false, false, false}))
 	for scanner.Scan() {
-		tokenBytes := scanner.Text()
-		spew.Dump(tokenBytes, len(tokenBytes))
+		token := scanner.Text()
+		// spew.Dump(ReStopWords.MatchString(token), token)
+		spew.Dump(snowball.Stem(token, "english", true))
 	}
+	// spew.Dump(ReStopWords.MatchString("fall"), "fall", len(`|`))
 	if err := scanner.Err(); err != nil {
 		spew.Dump("err:", err)
 	}
@@ -32,7 +37,8 @@ func SplitterGen(skip [5]bool) func([]byte, bool) (int, []byte, error) {
 			adv, tok, typ, err := segment.SegmentWords(data, atEOF)
 			advance += adv
 		
-		if skip[typ] && err == nil && tok != nil && adv > 0 {
+		copy(tok[:adv], bytes.ToLower(tok[:adv]))
+		if err == nil && tok != nil && adv > 0 && (skip[typ] || stopwords.Match(string(tok[:adv]))) {
 			if atEOF {
 				data = data[adv:]
 				goto Again
