@@ -1,4 +1,4 @@
-module s3arch
+module github.com/arccoza/go-s3arch
 
 go 1.13
 
