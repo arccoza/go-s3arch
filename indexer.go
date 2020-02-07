@@ -1,41 +1,27 @@
 package main
 
 import (
-	// "github.com/bbalet/stopwords"
-	"github.com/davecgh/go-spew/spew"
+	"io"
 	"bufio"
-	"strings"
 	"bytes"
-	// "fmt"
+
+	// "github.com/davecgh/go-spew/spew"
 	"github.com/blevesearch/segment"
-	"github.com/kljensen/snowball"
 	"github.com/arccoza/go-s3arch/pkg/stopwords"
 )
 
-func StemText(text string) string {
-	// strings.NewReader(text)
-
-	scanner := bufio.NewScanner(strings.NewReader(text))
-	scanner.Split(SplitterGen([5]bool{true, false, false, false, false}))
-	for scanner.Scan() {
-		token := scanner.Text()
-		// spew.Dump(ReStopWords.MatchString(token), token)
-		spew.Dump(snowball.Stem(token, "english", true))
-	}
-	// spew.Dump(ReStopWords.MatchString("fall"), "fall", len(`|`))
-	if err := scanner.Err(); err != nil {
-		spew.Dump("err:", err)
-	}
-
-	return ""
+func TokenizeText(text io.Reader, types [5]bool) *bufio.Scanner {
+	scanner := bufio.NewScanner(text)
+	scanner.Split(SplitterGen(types))
+	return scanner
 }
 
 func SplitterGen(skip [5]bool) func([]byte, bool) (int, []byte, error) {
 	return func(data []byte, atEOF bool) (int, []byte, error) {
-		advance := 0
+		advAll := 0
 		Again:
 			adv, tok, typ, err := segment.SegmentWords(data, atEOF)
-			advance += adv
+			advAll += adv
 		
 		copy(tok[:adv], bytes.ToLower(tok[:adv]))
 		if err == nil && tok != nil && adv > 0 && (skip[typ] || stopwords.Match(string(tok[:adv]))) {
@@ -46,6 +32,6 @@ func SplitterGen(skip [5]bool) func([]byte, bool) (int, []byte, error) {
 			tok = nil
 		}
 
-		return advance, tok, err
+		return advAll, tok, err
 	}
 }
