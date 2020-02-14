@@ -1,14 +1,14 @@
 package segment
 
 import (
-	"io"
-	"fmt"
 	"bufio"
+	"fmt"
+	"io"
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/arccoza/go-s3arch/pkg/hangul"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func Graphemes(text io.Reader) *bufio.Scanner {
@@ -18,7 +18,7 @@ func Graphemes(text io.Reader) *bufio.Scanner {
 }
 
 func graphemeSplit(data []byte, atEOF bool) (int, []byte, error) {
-	if (len(data) == 0) {
+	if len(data) == 0 {
 		return 0, nil, nil
 	}
 
@@ -28,14 +28,14 @@ func graphemeSplit(data []byte, atEOF bool) (int, []byte, error) {
 		Join
 		None = 0
 	)
-	
+
 	prev := None
 	ZWJ := '\u200D'
 	adv, _, stp := 0, 0, 0
 	// lth := adv - skp
 	buf := data[:]
 	fmt.Println("-------------------", atEOF)
-	
+
 	for i, take := 0, 2; i < take && len(buf) > 0; i++ {
 		r, s := utf8.DecodeRune(buf)
 		stp = s
@@ -65,9 +65,9 @@ func graphemeSplit(data []byte, atEOF bool) (int, []byte, error) {
 			spew.Dump("GB6/7/8 Hangul")
 
 			if prev > 0 &&
-			((prev == hangul.L && (typ & hangul.L_V_LV_LVT > 0)) ||
-			(prev & hangul.LV_V > 0 && (typ & hangul.V_T > 0)) ||
-			(prev & hangul.LVT_T > 0 && typ == hangul.T)) {
+				((prev == hangul.L && (typ&hangul.L_V_LV_LVT > 0)) ||
+					(prev&hangul.LV_V > 0 && (typ&hangul.V_T > 0)) ||
+					(prev&hangul.LVT_T > 0 && typ == hangul.T)) {
 				take += 1
 				stp = 0
 			}
