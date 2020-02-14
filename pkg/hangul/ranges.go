@@ -4,34 +4,39 @@ import (
   "unicode"
 )
 
-var Syllable_L = &unicode.RangeTable{
+// L
+var Leading_Jamo = &unicode.RangeTable{
   R16: []unicode.Range16{
     {0x1100, 0x115F, 1},
     {0xA960, 0xA97C, 1},
   },
 }
 
-var Syllable_V = &unicode.RangeTable{
+// V
+var Vowel_Jamo = &unicode.RangeTable{
   R16: []unicode.Range16{
     {0x1160, 0x11A7, 1},
     {0xD7B0, 0xD7C6, 1},
   },
 }
 
-var Syllable_T = &unicode.RangeTable{
+// T
+var Trailing_Jamo = &unicode.RangeTable{
   R16: []unicode.Range16{
     {0x11A8, 0x11FF, 1},
     {0xD7CB, 0xD7FB, 1},
   },
 }
 
-var Syllable_LV = &unicode.RangeTable{
+// LV
+var LV_Syllable = &unicode.RangeTable{
   R16: []unicode.Range16{
     {0xAC00, 0xD788, 28},
   },
 }
 
-var Syllable_LVT = &unicode.RangeTable{
+// LVT
+var LVT_Syllable = &unicode.RangeTable{
   R16: []unicode.Range16{
     {0xAC01, 0xAC1B, 1},
     {0xAC1D, 0xAC37, 1},
