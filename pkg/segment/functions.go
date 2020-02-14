@@ -23,7 +23,7 @@ func graphemeSplit(data []byte, atEOF bool) (int, []byte, error) {
 	}
 
 	const (
-		Char = hangul.L << iota
+		Char = hangul.LVT << (iota + 1)
 		Extend
 		Join
 		None = 0
@@ -51,7 +51,10 @@ func graphemeSplit(data []byte, atEOF bool) (int, []byte, error) {
 			take += 1
 			stp = 0
 			prev = Extend
-		} else if unicode.In(r, unicode.Mc, unicode.Prepended_Concatenation_Mark, Consonant_Preceding_Repha, Consonant_Prefixed) {
+		} else if unicode.In(r, unicode.Mc,
+			unicode.Prepended_Concatenation_Mark,
+			Consonant_Preceding_Repha,
+			Consonant_Prefixed) {
 			spew.Dump("GB9a, GB9b", len(buf))
 			take += 1
 			stp = 0
