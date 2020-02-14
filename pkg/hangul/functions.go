@@ -13,17 +13,38 @@ const (
     TypeLVT
 )
 
+func isL(r rune) bool {
+	return 0x1100 <= i && i <= 0xA97C && unicode.Is(Leading_Jamo, r)
+}
+
+func isV(r rune) bool {
+	return 0x1160 <= i && i <= 0xD7C6 && unicode.Is(Vowel_Jamo, r)
+}
+
+func isT(r rune) bool {
+	return 0x11A8 <= i && i <= 0xD7FB && unicode.Is(Trailing_Jamo, r)
+}
+
+func isLV(r rune) bool {
+	return unicode.Is(LV_Syllable, r)
+}
+
+func isLVT(r rune) bool {
+	return 0xAC01 <= i && i <= 0xD7A3 && unicode.Is(LVT_Syllable, r)
+}
+
 func SyllableType(r rune) int {
+	i := uint16(r)
 	switch {
-	case unicode.Is(Syllable_L, r):
+	case isL(r):
 		return TypeL
-	case unicode.Is(Syllable_V, r):
+	case isV(r):
 		return TypeV
-	case unicode.Is(Syllable_T, r):
+	case isT(r):
 		return TypeT
-	case unicode.Is(Syllable_LV, r):
+	case isLV(r):
 		return TypeLV
-	case unicode.Is(Syllable_LVT, r):
+	case isLVT(r):
 		return TypeLVT
 	}
 
