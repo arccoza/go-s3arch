@@ -1,20 +1,20 @@
 package hangul
 
 import (
-  "unicode"
+	"unicode"
 )
 
 const (
-    L = 1 << iota
-    V
-    T
-    LV
-    LVT
-    L_V_LV_LVT = L | V | LV | LVT
-    LV_V = LV | V
-    V_T = V | T
-    LVT_T = LVT | T
-    None = 0
+	L = 1 << iota
+	V
+	T
+	LV
+	LVT
+	L_V_LV_LVT = L | V | LV | LVT
+	LV_V       = LV | V
+	V_T        = V | T
+	LVT_T      = LVT | T
+	None       = 0
 )
 
 func isL(r rune) bool {
