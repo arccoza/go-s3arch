@@ -5,12 +5,16 @@ import (
 )
 
 const (
-	TypeNone = iota
-    TypeL
-    TypeV
-    TypeT
-    TypeLV
-    TypeLVT
+    L = 1 << iota
+    V
+    T
+    LV
+    LVT
+    L_V_LV_LVT = L | V | LV | LVT
+    LV_V = LV | V
+    V_T = V | T
+    LVT_T = LVT | T
+    None = 0
 )
 
 func isL(r rune) bool {
@@ -36,16 +40,16 @@ func isLVT(r rune) bool {
 func SyllableType(r rune) int {
 	switch {
 	case isL(r):
-		return TypeL
+		return L
 	case isV(r):
-		return TypeV
+		return V
 	case isT(r):
-		return TypeT
+		return T
 	case isLV(r):
-		return TypeLV
+		return LV
 	case isLVT(r):
-		return TypeLVT
+		return LVT
 	}
 
-	return TypeNone
+	return None
 }
