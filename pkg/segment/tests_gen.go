@@ -11,7 +11,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/davecgh/go-spew/spew"
+	// "github.com/davecgh/go-spew/spew"
 )
 
 // var body = `
@@ -24,59 +24,75 @@ import (
 // `
 
 var test = `
-t.Run("A=1", func(t *testing.T) {
-	{{.}}
+t.Run("Name={{.Name}}Num={{.Num}}", func(t *testing.T) {
+	{{.Parts}}
 })
 `
 
 var tmpl, err = template.New("todos").Parse(test)
 
 
+type fixture struct {
+	Num int
+	Name, Comment string
+	Parts []string
+}
+
+func must(obj interface{}, err error) interface{} {
+	if err != nil {
+		log.Fatal(err)
+	}
+	return obj
+}
+
 func main() {
-	if dir, err := os.Getwd(); err != nil {
-		log.Fatal(err)
-	} else if file, err := os.Open(filepath.Join(dir, "GraphemeBreakTest.txt")); err != nil {
-		log.Fatal(err)
-	} else {
-		f := bufio.NewReader(file)
+	dir := must(os.Getwd()).(string)
+	input := must(os.Open(filepath.Join(dir, "GraphemeBreakTest.txt"))).(*os.File)
+	defer input.Close()
+	output := must(os.Create(filepath.Join(dir, "grapheme_test.go"))).(*os.File)
+	defer output.Close()
 
-		for line, _, err := f.ReadLine(); err == nil; line, _, err = f.ReadLine() {
-			// fmt.Printf("read %d bytes: %q\n", len(line), line)
-			if line[0] == '#' {
-				continue
-			}
-			s := string(line)
-			rs := []rune(s)
-			tok := []rune{}
-			toks := []string{}
-			name := ""
-			comment := ""
+	in := bufio.NewReader(input)
+	num := 0
 
-			Loop:
-			for i, r := range rs {
-				switch {
-				case r == '#':
-					// toks = append(toks, string(rs[i:]))
-					name = strings.Join(toks, "")
-					comment = string(rs[i:])
-					break Loop
-				case r == '÷' || r == '×':
-					if len(tok) > 0 {
-						toks = append(toks, string(tok))
-						tok = tok[:0]
-					}
-					toks = append(toks, string(r))
-				case (0x0030 <= r && r <= 0x0039) || (0x0041 <= r && r <= 0x0046):
-					tok = append(tok, r)
-				}
-			}
-			spew.Dump(name, comment)
-
-			err = tmpl.Execute(os.Stdout, toks)
-			if err != nil {
-				panic(err)
-			}
-			// break
+	for line, _, err := in.ReadLine(); err == nil; line, _, err = in.ReadLine() {
+		// fmt.Printf("read %d bytes: %q\n", len(line), line)
+		if line[0] == '#' {
+			continue
 		}
+		num++
+		s := string(line)
+		rs := []rune(s)
+		tok := []rune{}
+		toks := []string{}
+		fix := fixture{}
+
+		Loop:
+		for i, r := range rs {
+			switch {
+			case r == '#':
+				fix.Num = num
+				fix.Name = strings.Join(toks, "")
+				fix.Comment = string(rs[i:])
+				fix.Parts = toks
+				break Loop
+			case r == '÷' || r == '×':
+				if len(tok) > 0 {
+					toks = append(toks, string(tok))
+					tok = tok[:0]
+				}
+				toks = append(toks, string(r))
+			case (0x0030 <= r && r <= 0x0039) || (0x0041 <= r && r <= 0x0046):
+				tok = append(tok, r)
+			}
+		}
+		// spew.Dump(dir)
+
+		// err = tmpl.Execute(os.Stdout, fix)
+		err = tmpl.Execute(output, fix)
+		if err != nil {
+			panic(err)
+		}
+		// break
 	}
 }
