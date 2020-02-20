@@ -1,3 +1,5 @@
+//go:generate go run tests_gen.go
+
 package segment
 
 import (
