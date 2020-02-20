@@ -14,23 +14,27 @@ import (
 	// "github.com/davecgh/go-spew/spew"
 )
 
-// var body = `
-// func TestGraphemes(t *testing.T) {
-//     got := Abs(-1)
-//     if got != 1 {
-//         t.Errorf("Abs(-1) = %d; want 1", got)
-//     }
-// }
-// `
-
 var test = `
-t.Run("Name={{.Name}}Num={{.Num}}", func(t *testing.T) {
-	{{.Parts}}
-})
+{{define "Head"}}
+package segment
+
+import (
+	"testing"
+)
+
+func TestGraphemes(t *testing.T) {
+{{end}}
+{{define "SubTest"}}
+	t.Run("Num={{.Num}},Name={{.Name}}", func(t *testing.T) {
+		{{.Parts}}
+	})
+{{end}}
+{{define "Foot"}}
+}
+{{end}}
 `
 
-var tmpl, err = template.New("todos").Parse(test)
-
+var tmpl, err = template.New("tests").Parse(test)
 
 type fixture struct {
 	Num int
@@ -49,8 +53,12 @@ func main() {
 	dir := must(os.Getwd()).(string)
 	input := must(os.Open(filepath.Join(dir, "GraphemeBreakTest.txt"))).(*os.File)
 	defer input.Close()
-	output := must(os.Create(filepath.Join(dir, "grapheme_test.go"))).(*os.File)
+	output := must(os.Create(filepath.Join(dir, "graphemes_test.go"))).(*os.File)
 	defer output.Close()
+
+	if err := tmpl.ExecuteTemplate(output, "Head", "no data"); err != nil {
+		log.Fatal(err)
+	}
 
 	in := bufio.NewReader(input)
 	num := 0
@@ -89,10 +97,14 @@ func main() {
 		// spew.Dump(dir)
 
 		// err = tmpl.Execute(os.Stdout, fix)
-		err = tmpl.Execute(output, fix)
+		err = tmpl.ExecuteTemplate(output, "SubTest", fix)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		// break
+	}
+
+	if err := tmpl.ExecuteTemplate(output, "Foot", "no data"); err != nil {
+		log.Fatal(err)
 	}
 }
