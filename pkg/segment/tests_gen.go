@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"bufio"
 	"strings"
-	"strconv"
+	// "strconv"
 	"text/template"
 
 	"github.com/davecgh/go-spew/spew"
@@ -103,15 +103,13 @@ func main() {
 				if len(tok) > 0 {
 					strTok := string(tok)
 					toks = append(toks, strTok)
-					chr, _ := strconv.ParseInt(strTok, 16, 32)
-					strChr := string(chr)
-					fix.Input += strChr
+					fix.Input += `\u` + strTok
 					tok = tok[:0]
 
 					if last := len(fix.Expected) - 1; prvBrk == '×' {
-						fix.Expected[last] += strChr
+						fix.Expected[last] += `\u` + strTok
 					} else {
-						fix.Expected = append(fix.Expected, strChr)
+						fix.Expected = append(fix.Expected, `\u` + strTok)
 					}
 					prvBrk = r
 				}
