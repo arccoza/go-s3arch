@@ -9,9 +9,10 @@ import (
 	"path/filepath"
 	"bufio"
 	"strings"
+	"strconv"
 	"text/template"
 
-	// "github.com/davecgh/go-spew/spew"
+	"github.com/davecgh/go-spew/spew"
 )
 
 var test = `
@@ -20,13 +21,24 @@ package segment
 
 import (
 	"testing"
+	"strings"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGraphemes(t *testing.T) {
 {{end}}
 {{define "SubTest"}}
-	t.Run("Num={{.Num}},Name={{.Name}}", func(t *testing.T) {
-		{{.Parts}}
+	t.Run("Num={{.Num}},Match={{.Match}}", func(t *testing.T) {
+		want := []string{ {{range .Expected}}"{{.}}",{{end}} }
+		got := make([]string, 0, 3)
+		scanner := Graphemes(strings.NewReader("{{.Input}}"))
+
+		for scanner.Scan() {
+			got = append(got, scanner.Text())
+		}
+
+		assert.Equal(t, want, got, "they should be equal")
 	})
 {{end}}
 {{define "Foot"}}
@@ -38,7 +50,8 @@ var tmpl, err = template.New("tests").Parse(test)
 
 type fixture struct {
 	Num int
-	Name, Comment string
+	Match, Comment, Input string
+	Expected []string
 	Parts []string
 }
 
@@ -68,33 +81,46 @@ func main() {
 		if line[0] == '#' {
 			continue
 		}
+
 		num++
 		s := string(line)
 		rs := []rune(s)
 		tok := []rune{}
 		toks := []string{}
 		fix := fixture{}
+		var prvBrk rune
 
 		Loop:
 		for i, r := range rs {
 			switch {
 			case r == '#':
 				fix.Num = num
-				fix.Name = strings.Join(toks, "")
+				fix.Match = strings.Join(toks, "")
 				fix.Comment = string(rs[i:])
 				fix.Parts = toks
 				break Loop
 			case r == '÷' || r == '×':
 				if len(tok) > 0 {
-					toks = append(toks, string(tok))
+					strTok := string(tok)
+					toks = append(toks, strTok)
+					chr, _ := strconv.ParseInt(strTok, 16, 32)
+					strChr := string(chr)
+					fix.Input += strChr
 					tok = tok[:0]
+
+					if last := len(fix.Expected) - 1; prvBrk == '×' {
+						fix.Expected[last] += strChr
+					} else {
+						fix.Expected = append(fix.Expected, strChr)
+					}
+					prvBrk = r
 				}
 				toks = append(toks, string(r))
 			case (0x0030 <= r && r <= 0x0039) || (0x0041 <= r && r <= 0x0046):
 				tok = append(tok, r)
 			}
 		}
-		// spew.Dump(dir)
+		spew.Dump(fix.Input, fix.Expected)
 
 		// err = tmpl.Execute(os.Stdout, fix)
 		err = tmpl.ExecuteTemplate(output, "SubTest", fix)
