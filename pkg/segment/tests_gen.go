@@ -124,7 +124,7 @@ func main() {
 
 					// Create an string of the escaped runes as input for testing
 					fix.Input += strTok
-					// Clear tok for the next tok to gather
+					// Clear tok for the next tok to be gathered
 					tok = tok[:0]
 
 					// Gather up the expected graphemes as a slice of strings
