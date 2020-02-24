@@ -79,8 +79,9 @@ func main() {
 	in := bufio.NewReader(input)
 	num := 0
 
+	// Get each line in the GraphemeBreakTest.txt file
 	for line, _, err := in.ReadLine(); err == nil; line, _, err = in.ReadLine() {
-		// fmt.Printf("read %d bytes: %q\n", len(line), line)
+		// Skip comment only lines (starts with a #)
 		if line[0] == '#' {
 			continue
 		}
