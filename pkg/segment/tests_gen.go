@@ -3,13 +3,13 @@
 package main
 
 import (
-	"os" 
-	// "fmt"
+	"os"
+	"fmt"
 	"log"
 	"path/filepath"
 	"bufio"
 	"strings"
-	// "strconv"
+	"strconv"
 	"text/template"
 
 	"github.com/davecgh/go-spew/spew"
@@ -27,9 +27,12 @@ import (
 )
 
 func TestGraphemes(t *testing.T) {
+	t.Parallel()
 {{end}}
 {{define "SubTest"}}
+	/* {{.Content}} */
 	t.Run("Num={{.Num}},Match={{.Match}}", func(t *testing.T) {
+		t.Log("Num={{.Num}},Match={{.Match}},Input={{.Input}}")
 		want := []string{ {{range .Expected}}"{{.}}",{{end}} }
 		got := make([]string, 0, 3)
 		scanner := Graphemes(strings.NewReader("{{.Input}}"))
@@ -50,7 +53,7 @@ var tmpl, err = template.New("tests").Parse(test)
 
 type fixture struct {
 	Num int
-	Match, Comment, Input string
+	Match, Comment, Input, Content string
 	Expected []string
 	Parts []string
 }
@@ -75,12 +78,15 @@ func main() {
 
 	in := bufio.NewReader(input)
 	num := 0
+	count := 0
 
 	for line, _, err := in.ReadLine(); err == nil; line, _, err = in.ReadLine() {
 		// fmt.Printf("read %d bytes: %q\n", len(line), line)
 		if line[0] == '#' {
 			continue
 		}
+
+		count++
 
 		num++
 		s := string(line)
@@ -93,27 +99,47 @@ func main() {
 		Loop:
 		for i, r := range rs {
 			switch {
+			// This is the beginning of the comment on this line, stop the loop here
 			case r == '#':
 				fix.Num = num
 				fix.Match = strings.Join(toks, "")
 				fix.Comment = string(rs[i:])
+				fix.Content, _ = strconv.Unquote(`"` + fix.Input + `"`)
 				fix.Parts = toks
 				break Loop
+			// These are grapheme break markers;
+			// ÷ means break here
+			// × means do not break and merge with next rune
 			case r == '÷' || r == '×':
 				if len(tok) > 0 {
+					// Convert tok (slice of runes) to a string and add it to the
+					// list of toks
 					strTok := string(tok)
 					toks = append(toks, strTok)
-					fix.Input += `\u` + strTok
+
+					// Turn tok into the appropriate length unicode escape string
+					if len(tok) <= 4 {
+						strTok = `\u` + fmt.Sprintf("%04s", strTok)
+					} else {
+						strTok = `\U` + fmt.Sprintf("%08s", strTok)
+					}
+
+					// Create an string of the escaped runes as input for testing
+					fix.Input += strTok
+					// Clear tok for the next tok to gather
 					tok = tok[:0]
 
+					// Gather up the expected graphemes as a slice of strings
+					// using prvBrk to track the previous break char (÷ or ×)
 					if last := len(fix.Expected) - 1; prvBrk == '×' {
-						fix.Expected[last] += `\u` + strTok
+						fix.Expected[last] += strTok
 					} else {
-						fix.Expected = append(fix.Expected, `\u` + strTok)
+						fix.Expected = append(fix.Expected, strTok)
 					}
 					prvBrk = r
 				}
 				toks = append(toks, string(r))
+			// If r is one of the hex characters gather it into tok
 			case (0x0030 <= r && r <= 0x0039) || (0x0041 <= r && r <= 0x0046):
 				tok = append(tok, r)
 			}
@@ -125,7 +151,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		// break
+
+		if count > 10000 {
+			break
+		}
 	}
 
 	if err := tmpl.ExecuteTemplate(output, "Foot", "no data"); err != nil {
