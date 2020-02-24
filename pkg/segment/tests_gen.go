@@ -78,15 +78,12 @@ func main() {
 
 	in := bufio.NewReader(input)
 	num := 0
-	count := 0
 
 	for line, _, err := in.ReadLine(); err == nil; line, _, err = in.ReadLine() {
 		// fmt.Printf("read %d bytes: %q\n", len(line), line)
 		if line[0] == '#' {
 			continue
 		}
-
-		count++
 
 		num++
 		s := string(line)
@@ -152,7 +149,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		if count > 10000 {
+		if num > 10000 {
 			break
 		}
 	}
