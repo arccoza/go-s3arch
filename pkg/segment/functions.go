@@ -8,9 +8,10 @@ import (
 	"io"
 	"unicode"
 	"unicode/utf8"
+	"math/bits"
 
-	// "github.com/arccoza/go-s3arch/pkg/hangul"
-	// "github.com/davecgh/go-spew/spew"
+	"github.com/arccoza/go-s3arch/pkg/hangul"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func Graphemes(text io.Reader) *bufio.Scanner {
@@ -21,14 +22,19 @@ func Graphemes(text io.Reader) *bufio.Scanner {
 
 const (
 	// Char = hangul.LVT << (iota + 1)
-	// CR = 1 << (iota + 1)
-	CR = (iota + 2)
+	CR = 1 << (iota + 2)
+	// CR = (iota + 2)
 	LF
 	Control
 	Extend
 	RI
 	Prepend
 	SpacingMark
+	L
+	V
+	T
+	LV
+	LVT
 	ExtPict
 	Extend_ExtCccZwj
 	ZWJ_ExtCccZwj
@@ -52,8 +58,9 @@ func graphemeSplit(data []byte, atEOF bool) (int, []byte, error) {
 	adv, _, stp := 0, 0, 0
 	// lth := adv - skp
 	buf := data[:]
+	idx := 0
 	fmt.Println("-------------------", atEOF)
-	fmt.Println(CR, LF)
+	// fmt.Println(SpacingMark, hangul.L, L, hangul.LVT, LVT, ExtPict)
 
 	for i, take := 0, 1; i < take && len(buf) > 0; i++ {
 		r, s := utf8.DecodeRune(buf)
@@ -61,7 +68,13 @@ func graphemeSplit(data []byte, atEOF bool) (int, []byte, error) {
 		adv += s
 		buf = buf[stp:]
 
-		if prev = firstOf(r, breakTable[prev]...); prev == -1 {
+		if prev > 1 {
+			idx = bits.TrailingZeros(uint(prev))
+		} else {
+			idx = prev
+		}
+		fmt.Println(prev, idx)
+		if prev = firstOf(r, breakTable[idx]...); prev == -1 {
 			fmt.Println("break")
 			// stp = 0
 			break
@@ -75,6 +88,7 @@ func graphemeSplit(data []byte, atEOF bool) (int, []byte, error) {
 	}
 
 	adv -= stp
+	spew.Dump(string(data[:adv]))
 	return adv, data[:adv], nil
 }
 
@@ -94,10 +108,20 @@ var breakTable = [][]func(rune) int{
 	// RI
 	{isExtend, isRI, isSpacingMark, isExtend_ExtCccZwj, isZWJ_ExtCccZwj,},
 	// Prepend
-	{},
-	// Other & Extend & RI & Prepend & SpacingMark & L & V & T & LV & LVT & ExtPict & Extend_ExtCccZwj & ZWJ_ExtCccZwj,
+	// {},
+	{isExtend, isRI, isPrepend, isSpacingMark, hangul.IsL, hangul.IsV, hangul.IsT, hangul.IsLV, hangul.IsLVT, isExtPict, isExtend_ExtCccZwj, isZWJ_ExtCccZwj, isOther,},
 	// SpacingMark
 	{isExtend, isSpacingMark, isExtend_ExtCccZwj, isZWJ_ExtCccZwj,},
+	// L
+	{hangul.IsL, hangul.IsV, hangul.IsLV, hangul.IsLVT, isExtend, isSpacingMark,},
+	// V
+	{hangul.IsV, hangul.IsT, isExtend, isSpacingMark,},
+	// T
+	{hangul.IsT, isExtend, isSpacingMark,},
+	// LV
+	{hangul.IsV, hangul.IsT, isExtend, isSpacingMark,},
+	// LVT
+	{hangul.IsT, isExtend, isSpacingMark,},
 }
 
 func firstOf(r rune, fns ...func(rune) int) int {
@@ -143,6 +167,7 @@ func isExtend(r rune) int {
 }
 
 func isRI(r rune) int {
+	fmt.Println("isRI")
 	return b2i(unicode.Is(unicode.Regional_Indicator, r)) * RI
 }
 
