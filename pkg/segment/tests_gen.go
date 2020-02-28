@@ -30,6 +30,7 @@ func TestGraphemes(t *testing.T) {
 	t.Parallel()
 {{end}}
 {{define "SubTest"}}
+	/* {{.Comment}} */
 	/* {{.Content}} */
 	t.Run("Num={{.Num}},Match={{.Match}}", func(t *testing.T) {
 		t.Log("Num={{.Num}},Match={{.Match}},Input={{.Input}}")
