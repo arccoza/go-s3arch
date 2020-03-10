@@ -130,6 +130,13 @@ func getNibble(b, m byte) byte {
 	return n
 }
 
+type [2]int Index
+func (i *Index) Get(bs []byte) byte {
+	x := i[1] % 2
+	m := byte((1 - x) * 0x0F + x * 0xF0)
+	return getNibble(bs[i[0]], m)
+}
+
 func (n *node) first() byte {
 	f := n.prefix[0] & n.hmask
 	if f > 0x0F {
