@@ -110,7 +110,7 @@ func (a *node) comparePrefixes(b *node) (int, byte) {
 
 func (rt *node) get(key []byte, nib byte) *node {
 	pp.Println(key, nib)
-	for frm, brk, msk, off := walk(rt, key, nib); /*brk > 0 || msk == 0xF0*/ ; frm, brk, msk, off = walk(frm, key, msk) {
+	for frm, brk, msk, off := walk(rt, key, nib); brk >= 0 ; frm, brk, msk, off = walk(frm, key, msk) {
 		pp.Println(frm, brk, msk, off)
 		if len(key) < len(frm.prefix) {
 			pp.Println("---> SHORT")
