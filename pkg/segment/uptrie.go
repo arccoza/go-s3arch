@@ -29,6 +29,10 @@ func NewUPTrie() *UPTrie {
 	return &UPTrie{root: node{edges: make(edges, 16)}}
 }
 
+func (t *UPTrie) Get(key []byte) *node {
+	return t.root.get(key, 0xF0)
+}
+
 func (t *UPTrie) Put(key []byte, props uint64) {
 	n := t.root
 
