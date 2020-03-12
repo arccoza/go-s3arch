@@ -23,7 +23,7 @@ func main() {
 	t := NewUPTrie()
 	t.Put([]byte("remember"), 0x0001)
 	t.Put([]byte("remain"), 0x0002)
-
+	// t.Get([]byte("rem"))
 	pp.Println(t.Get([]byte("rem")))
 }
 
@@ -39,7 +39,7 @@ type node struct {
 	edges edges
 }
 
-type edges []node
+type edges []*node
 
 func NewUPTrie() *UPTrie {
 	return &UPTrie{root: node{edges: make(edges, 16)}}
@@ -55,7 +55,7 @@ func (t *UPTrie) Put(key []byte, props uint64) {
 
 func (e edges) add(n *node) {
 	idx := getNibble(n.prefix[0], n.hmask)
-	e[idx] = *n
+	e[idx] = n
 }
 
 func (head *node) split(brk int, msk byte, off int) (tail *node) {
@@ -80,15 +80,12 @@ func (n *node) chop(brk int, msk byte, off int) bool {
 
 func (prv *node) put(n *node) {
 	for frm, brk, msk, off := walk(prv, n.prefix, n.hmask); brk >= 0 ; frm, brk, msk, off = walk(frm, n.prefix, n.hmask) {
-		// pp.Println(frm, brk, msk, off)
 		// SPLIT EXISTING
 		if tail := frm.split(brk, msk, off); tail != nil {
-			// pp.Println("---> SPLIT")
 			frm.edges.add(tail)
 		}
 		// MATCH
 		if !n.chop(brk, msk, off) {
-			// pp.Println("---> CHOP")
 			frm.props |= n.props
 			return
 		// NO MATCH
@@ -99,14 +96,10 @@ func (prv *node) put(n *node) {
 		prv.edges = make(edges, 16)
 	}
 	prv.edges.add(n)
-
-	// pp.Println("---> END")
 }
 
 func (rt *node) get(key []byte, nib byte) *node {
-	pp.Println(key, nib)
 	for frm, brk, msk, off := walk(rt, key, nib); brk >= 0 ; frm, brk, msk, off = walk(frm, key, msk) {
-		pp.Println(frm, brk, msk, off)
 		// SHORT
 		if len(key) < len(frm.prefix) {
 			pp.Println("---> SHORT")
@@ -130,8 +123,9 @@ func (rt *node) get(key []byte, nib byte) *node {
 func walk(from *node, key []byte, nib byte) (*node, int, byte, int) {
 	if len(key) == 0 { return nil, -1, nib, 0 }
 	idx := getNibble(key[0], nib)
-	n := &from.edges[idx]
-	if len(n.prefix) == 0 { return nil, -1, nib, 0 }
+	n := from.edges[idx]
+	if n == nil { return nil, -1, nib, 0 }
+	// if len(n.prefix) == 0 { return nil, -1, nib, 0 }
 
 	brk, msk, off := 0, byte(0x0F), 1
 	for minLen := minInt(len(n.prefix), len(key)); brk < minLen; brk++ {
