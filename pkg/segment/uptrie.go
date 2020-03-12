@@ -158,10 +158,3 @@ func minInt(a, b int) int {
 	if a < b { return a }
 	return b
 }
-
-type Index [2]int
-func (i *Index) Get(bs []byte) byte {
-	x := i[1] % 2
-	m := byte((1 - x) * 0x0F + x * 0xF0)
-	return getNibble(bs[i[0]], m)
-}
