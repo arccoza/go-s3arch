@@ -102,21 +102,17 @@ func (rt *node) get(key []byte, nib byte) *node {
 	for frm, brk, msk, off := walk(rt, key, nib); brk >= 0 ; frm, brk, msk, off = walk(frm, key, msk) {
 		// SHORT
 		if len(key) < len(frm.prefix) {
-			pp.Println("---> SHORT")
 			return frm
 		// BRANCH
 		} else if brk < len(key) {
-			pp.Println("---> BRANCH")
 			key = key[brk + off:]
 			msk = ^msk
 		// MATCH
 		} else {
-			pp.Println("---> MATCH")
 			return frm
 		}
 	}
 
-	pp.Println("---> END")
 	return nil
 }
 
