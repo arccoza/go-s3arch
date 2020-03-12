@@ -24,7 +24,7 @@ func main() {
 	t.Put([]byte("remember"), 0x0001)
 	t.Put([]byte("remain"), 0x0002)
 
-	pp.Println(t)
+	pp.Println(t.Get([]byte("rem")))
 }
 
 type UPTrie struct{
@@ -79,18 +79,19 @@ func (n *node) chop(brk int, msk byte, off int) bool {
 }
 
 func (prv *node) put(n *node) {
-	pp.Println(n)
-	// frm, brk, msk, off := rt, 0, byte(0), 0
 	for frm, brk, msk, off := walk(prv, n.prefix, n.hmask); brk >= 0 ; frm, brk, msk, off = walk(frm, n.prefix, n.hmask) {
-		pp.Println(frm, brk, msk, off)
+		// pp.Println(frm, brk, msk, off)
+		// SPLIT EXISTING
 		if tail := frm.split(brk, msk, off); tail != nil {
-			pp.Println("---> SPLIT")
+			// pp.Println("---> SPLIT")
 			frm.edges.add(tail)
 		}
+		// MATCH
 		if !n.chop(brk, msk, off) {
-			pp.Println("---> CHOP")
+			// pp.Println("---> CHOP")
 			frm.props |= n.props
 			return
+		// NO MATCH
 		} else { prv = frm }
 
 	}
@@ -99,21 +100,23 @@ func (prv *node) put(n *node) {
 	}
 	prv.edges.add(n)
 
-	pp.Println("---> END")
-	// return nil
+	// pp.Println("---> END")
 }
 
 func (rt *node) get(key []byte, nib byte) *node {
 	pp.Println(key, nib)
 	for frm, brk, msk, off := walk(rt, key, nib); brk >= 0 ; frm, brk, msk, off = walk(frm, key, msk) {
 		pp.Println(frm, brk, msk, off)
+		// SHORT
 		if len(key) < len(frm.prefix) {
 			pp.Println("---> SHORT")
-			return nil
+			return frm
+		// BRANCH
 		} else if brk < len(key) {
 			pp.Println("---> BRANCH")
 			key = key[brk + off:]
 			msk = ^msk
+		// MATCH
 		} else {
 			pp.Println("---> MATCH")
 			return frm
@@ -128,7 +131,7 @@ func walk(from *node, key []byte, nib byte) (*node, int, byte, int) {
 	if len(key) == 0 { return nil, -1, nib, 0 }
 	idx := getNibble(key[0], nib)
 	n := &from.edges[idx]
-	if len(n.prefix) == 0 { return n, -1, nib, 0 }
+	if len(n.prefix) == 0 { return nil, -1, nib, 0 }
 
 	brk, msk, off := 0, byte(0x0F), 1
 	for minLen := minInt(len(n.prefix), len(key)); brk < minLen; brk++ {
