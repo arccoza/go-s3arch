@@ -27,7 +27,7 @@ func main() {
 	// t.Get([]byte("rem"))
 	pp.Println(t.Get([]byte("rem")).All())
 
-	q := NewQueue()
+	q := NewQueue(16)
 
 	// for i := 0; i < 33; i++ {
 	// 	pp.Println(i)
@@ -43,8 +43,8 @@ var TruncFreq int = 33
 
 type Queue []*node
 
-func NewQueue() Queue {
-	return make(Queue, 0, 16)
+func NewQueue(cap int) Queue {
+	return make(Queue, 0, cap)
 }
 
 func (q Queue) Enqueue(ns ...*node) Queue {
