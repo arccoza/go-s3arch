@@ -29,12 +29,17 @@ func main() {
 
 	q := NewQueue()
 
-	for i := 0; i < 33; i++ {
-		pp.Println(i)
-		q = q.Enqueue(&node{})
-	}
-	pp.Println(q)
+	// for i := 0; i < 33; i++ {
+	// 	pp.Println(i)
+	// 	q = q.Enqueue(&node{})
+	// }
+	q = q.Enqueue(&node{})
+	ns := []*node{nil}
+	pp.Println(q.Dequeue(ns))
+	pp.Println(ns)
 }
+
+var TruncFreq int = 33
 
 type Queue []*node
 
@@ -42,19 +47,17 @@ func NewQueue() Queue {
 	return make(Queue, 0, 16)
 }
 
-func (q Queue) Enqueue(n *node) Queue {
+func (q Queue) Enqueue(ns ...*node) Queue {
 	// Truncate queue
-	if rand.Intn(33) == 16 {
-		q = append(make(Queue, 0, 2*len(q)), q...)
+	if rand.Intn(TruncFreq) == TruncFreq / 2 {
+		q = append(make(Queue, 0, 2 * (len(q) + len(ns))), q...)
 	}
-	return append(q, n)
+	return append(q, ns...)
 }
 
-func (q Queue) Dequeue() (n *node) {
-	if len(q) > 0 {
-		n, q = q[0], q[1:]
-	}
-	return
+func (q Queue) Dequeue(ns []*node) (Queue, int) {
+	count := copy(ns, q)
+	return q[count:], count
 }
 
 type UPTrie struct{
