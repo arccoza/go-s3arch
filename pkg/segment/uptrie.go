@@ -27,7 +27,34 @@ func main() {
 	// t.Get([]byte("rem"))
 	pp.Println(t.Get([]byte("rem")).All())
 
+	q := NewQueue()
 
+	for i := 0; i < 33; i++ {
+		pp.Println(i)
+		q = q.Enqueue(&node{})
+	}
+	pp.Println(q)
+}
+
+type Queue []*node
+
+func NewQueue() Queue {
+	return make(Queue, 0, 16)
+}
+
+func (q Queue) Enqueue(n *node) Queue {
+	// Truncate queue
+	if rand.Intn(33) == 16 {
+		q = append(make(Queue, 0, 2*len(q)), q...)
+	}
+	return append(q, n)
+}
+
+func (q Queue) Dequeue() (n *node) {
+	if len(q) > 0 {
+		n, q = q[0], q[1:]
+	}
+	return
 }
 
 type UPTrie struct{
@@ -76,8 +103,6 @@ func (n *node) All() []*node {
 
 	return all
 }
-
-
 
 func (e edges) add(n *node) {
 	idx := getNibble(n.prefix[0], n.hmask)
