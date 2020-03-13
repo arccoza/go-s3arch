@@ -2,6 +2,7 @@ package main
 
 import (
 	// "fmt"
+	"math/rand"
 	// "github.com/davecgh/go-spew/spew"
 	"github.com/k0kubun/pp"
 )
@@ -24,7 +25,9 @@ func main() {
 	t.Put([]byte("remember"), 0x0001)
 	t.Put([]byte("remain"), 0x0002)
 	// t.Get([]byte("rem"))
-	pp.Println(t.Get([]byte("rem")))
+	pp.Println(t.Get([]byte("rem")).All())
+
+
 }
 
 type UPTrie struct{
@@ -33,9 +36,10 @@ type UPTrie struct{
 
 type node struct {
 	prefix []byte
-	props uint64
 	hmask byte
 	tmask byte
+	leaf bool
+	props uint64
 	edges edges
 }
 
@@ -50,8 +54,30 @@ func (t *UPTrie) Get(key []byte) *node {
 }
 
 func (t *UPTrie) Put(key []byte, props uint64) {
-	t.root.put(&node{prefix: key, hmask: 0xF0, tmask: 0x0F, props: props})
+	t.root.put(&node{prefix: key, hmask: 0xF0, tmask: 0x0F, leaf: true, props: props})
 }
+
+func (t *UPTrie) Del(key []byte) {
+	// return t.root.del(key, 0xF0)
+}
+
+func (n *node) IsLeaf() bool {
+	return n.leaf
+}
+
+func (n *node) All() []*node {
+	all := make([]*node, 0, 16)
+
+	for _, n := range n.edges {
+		if n != nil && n.leaf {
+			all = append(all, n)
+		}
+	}
+
+	return all
+}
+
+
 
 func (e edges) add(n *node) {
 	idx := getNibble(n.prefix[0], n.hmask)
@@ -60,10 +86,17 @@ func (e edges) add(n *node) {
 
 func (head *node) split(brk int, msk byte, off int) (tail *node) {
 	if brk < len(head.prefix) {
-		tail = &node{prefix: head.prefix[brk + off:], edges: head.edges, hmask: ^msk, tmask: head.tmask, props: head.props}
+		tail = &node{
+			prefix: head.prefix[brk + off:],
+			hmask: ^msk,
+			tmask: head.tmask,
+			leaf: head.leaf,
+			props: head.props,
+			edges: head.edges,
+		}
 		head.prefix = head.prefix[:brk + off + 1]
 		head.edges = make(edges, 16)
-		head.tmask, head.props = msk, 0
+		head.tmask, head.leaf, head.props = msk, false, 0
 	}
 
 	return tail
