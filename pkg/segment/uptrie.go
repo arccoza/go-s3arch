@@ -96,11 +96,18 @@ func (n *node) IsLeaf() bool {
 }
 
 func (n *node) All() []*node {
-	all := make([]*node, 0, 16)
+	q, ns, all := NewQueue(16), []*node{nil}, make([]*node, 0, 16)
+	q = q.Enqueue(n)
 
-	for _, n := range n.edges {
-		if n != nil && n.leaf {
-			all = append(all, n)
+	pp.Println("ALL")
+	for q, i := q.Dequeue(ns); i > 0; q, i = q.Dequeue(ns) {
+		pp.Println(i)
+		for _, n := range ns[0].edges {
+			if n != nil && n.leaf {
+				all = append(all, n)
+			} else if n != nil {
+				q = q.Enqueue(n)
+			}
 		}
 	}
 
