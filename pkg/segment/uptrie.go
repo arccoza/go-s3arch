@@ -24,19 +24,21 @@ func main() {
 	t := NewUPTrie()
 	t.Put([]byte("remember"), 0x0001)
 	t.Put([]byte("remain"), 0x0002)
+	t.Put([]byte("rem"), 0x0004)
+	// t.Put([]byte("re"), 0x0008)
 	// t.Get([]byte("rem"))
-	pp.Println(t.Get([]byte("rem")).All())
+	pp.Println(t)
+	// pp.Println(t.Get([]byte("r")).All())
 
-	q := NewQueue(16)
-
+	// q := NewQueue(16)
 	// for i := 0; i < 33; i++ {
 	// 	pp.Println(i)
 	// 	q = q.Enqueue(&node{})
 	// }
-	q = q.Enqueue(&node{})
-	ns := []*node{nil}
-	pp.Println(q.Dequeue(ns))
-	pp.Println(ns)
+	// q = q.Enqueue(&node{})
+	// ns := []*node{nil}
+	// pp.Println(q.Dequeue(ns))
+	// pp.Println(ns)
 }
 
 var TruncFreq int = 33
@@ -150,16 +152,22 @@ func (prv *node) put(n *node) {
 	for frm, brk, msk, off := walk(prv, n.prefix, n.hmask); brk >= 0 ; frm, brk, msk, off = walk(frm, n.prefix, n.hmask) {
 		// SPLIT EXISTING
 		if tail := frm.split(brk, msk, off); tail != nil {
+			pp.Println("SPLIT", tail)
 			frm.edges.add(tail)
 		}
 		// MATCH
 		if !n.chop(brk, msk, off) {
+			pp.Println("MATCH", n)
+			frm.leaf = true
 			frm.props |= n.props
 			return
 		// NO MATCH
-		} else { prv = frm }
-
+		} else {
+			pp.Println("NO MATCH")
+			prv = frm
+		}
 	}
+
 	if prv.edges == nil {
 		prv.edges = make(edges, 16)
 	}
@@ -191,13 +199,14 @@ func walk(from *node, key []byte, nib byte) (*node, int, byte, int) {
 	if n == nil { return nil, -1, nib, 0 }
 	// if len(n.prefix) == 0 { return nil, -1, nib, 0 }
 
-	brk, msk, off := 0, byte(0x0F), 1
+	brk, msk, off := 0, byte(0x0F), -1
 	for minLen := minInt(len(n.prefix), len(key)); brk < minLen; brk++ {
 		if a, b := n.prefix[brk], key[brk]; a != b {
 			if (a ^ b) & 0xF0 == 0 {
 				msk = 0xF0
 				off = 0
 			} else {
+				off = 1
 				brk--
 			}
 			break
