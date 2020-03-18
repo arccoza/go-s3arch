@@ -86,6 +86,9 @@ func (t *UPTrie) Get(key []byte) *node {
 }
 
 func (t *UPTrie) Put(key []byte, props uint64) {
+	// Make sure to copy the key so there is no ref to it externally,
+	// preventing unseen modification.
+	key = append([]byte(nil), key...)
 	t.root.put(&node{prefix: key, hmask: 0xF0, tmask: 0x0F, leaf: true, props: props})
 }
 
