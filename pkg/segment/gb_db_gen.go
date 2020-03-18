@@ -16,6 +16,7 @@ import (
 	"encoding/binary"
 
 	// "github.com/davecgh/go-spew/spew"
+	"github.com/k0kubun/pp"
 )
 
 var db = `
@@ -64,6 +65,10 @@ func must(obj interface{}, err error) interface{} {
 }
 
 func main() {
+	parse()
+}
+
+func parse() {
 	dir := must(os.Getwd()).(string)
 	input := must(os.Open(filepath.Join(dir, "GraphemeBreakProperty.txt"))).(*os.File)
 	defer input.Close()
@@ -76,8 +81,8 @@ func main() {
 
 	in := bufio.NewReader(input)
 	// num := 0
-	// root := Node{}
-	node := NewNode()
+	trie := NewUPTrie()
+	buf := make([]byte, 4)
 
 	// Get each line in the GraphemeBreakProperty.txt file
 	for line, _, err := in.ReadLine(); err == nil; line, _, err = in.ReadLine() {
@@ -96,27 +101,43 @@ func main() {
 			max, _ := strconv.ParseInt(rng[1], 16, 32)
 			// node := NewNode()
 			// fmt.Println(min, max, err)
+
 			for cp := min; cp <= max; cp++ {
 				// bs := make([]byte, 4)
 				// bs = putBytes(bs, cp)
 				// fmt.Printf("%v %v\n", prop, bs)
-				node.PutRune(rune(cp), nameToFlag[prop])
+				// pp.Println(prop, cp, uint32ToBytes(buf, uint32(cp)))
+				trie.Put(uint32ToBytes(buf, uint32(cp)), nameToFlag[prop])
 			}
 		} else {
 			// fmt.Println(prop, []byte(string(match[2])))
 			cp, _ := strconv.ParseInt(match[2], 16, 32)
-			node.PutRune(rune(cp), nameToFlag[prop])
+			// pp.Println(prop, cp, uint32ToBytes(buf, uint32(cp)))
+			trie.Put(uint32ToBytes(buf, uint32(cp)), nameToFlag[prop])
 		}
 
 
 	}
 
-	// node.PutRune(0x11D46, nameToFlag["Prepend"])
-	fmt.Println(node.GetRune(0x1F1E6).Props, nameToFlag["Regional_Indicator"])
+	pp.Println(trie.Get(uint32ToBytes(buf, uint32(0x11D46))))
+	// pp.Println(trie)
 
 	if err := tmpl.ExecuteTemplate(output, "Foot", "no data"); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func uint32ToBytes(buf []byte, num uint32) []byte {
+	binary.LittleEndian.PutUint32(buf, num)
+	switch {
+	case num <= 0xFF:
+		return buf[:1]
+	case num <= 0xFFFF:
+		return buf[:2]
+	case num <= 0xFFFFFF:
+		return buf[:3]
+	}
+	return buf
 }
 
 const (
@@ -151,74 +172,4 @@ var nameToFlag = map[string]uint64{
 	"LVT": LVT,
 	"ExtPict": ExtPict,
 	"ZWJ": ZWJ,
-}
-
-type Node struct {
-	Value byte
-	Props uint64
-	Next []Node
-}
-
-func NewNode() *Node {
-	return &Node{Next: make([]Node, 256)}
-}
-
-func (n *Node) PutRune(r rune, prop uint64) {
-	bs := make([]byte, 4)
-	if r <= 0xFFFF {
-		bs = bs[:2]
-		binary.LittleEndian.PutUint16(bs, uint16(r))
-	} else {
-		binary.LittleEndian.PutUint32(bs, uint32(r))
-	}
-
-	n.Put(bs, prop)
-}
-
-func (n *Node) Put(bs []byte, prop uint64) {
-	if len(bs) == 0 { return }
-	b := bs[0]
-
-	if n.Next == nil {
-		n.Next = make([]Node, 256)
-	}
-
-	nn := n.Next[b]
-	nn.Value = b
-
-	if len(bs) == 1 {
-		nn.Props |= prop
-		n.Next[b] = nn
-		return
-	}
-
-	nn.Put(bs[1:], prop)
-	n.Next[b] = nn
-}
-
-func (n *Node) GetRune(r rune) *Node {
-	bs := make([]byte, 4)
-	if r <= 0xFFFF {
-		bs = bs[:2]
-		binary.LittleEndian.PutUint16(bs, uint16(r))
-	} else {
-		binary.LittleEndian.PutUint32(bs, uint32(r))
-	}
-
-	return n.Get(bs)
-}
-
-func (n *Node) Get(bs []byte) *Node {
-	if len(bs) == 0 { return n }
-
-	// fmt.Println(bs, bs[0], len(n.Next))
-	nn := n.Next[bs[0]]
-
-	if len(bs) == 1 {
-		// fmt.Println(nn, Prepend)
-		return &nn
-	}
-
-	// nn := n.Next[int(bs[0])]
-	return nn.Get(bs[1:])
 }
