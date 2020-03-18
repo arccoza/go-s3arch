@@ -7,39 +7,39 @@ import (
 	"github.com/k0kubun/pp"
 )
 
-func main() {
-	// t := NewUPTrie()
-	// t.Put([]byte{0x11, 0x11, 0x11, 0x21}, 0)
-	// t.Put([]byte{0x11, 0x12, 0x11}, 1)
-	// r := node{edges: make(edges, 16)}
-	// // n := node{prefix: []byte{0x11, 0x11, 0x11}, hmask: 0XF0, tmask: 0x0F, edges: make(edges, 16), props: 0x0001}
-	// n := node{prefix: []byte{0x11, 0x22}, hmask: 0xF0, tmask: 0x0F, edges: make(edges, 16), props: 0x0001}
-	// r.edges[getNibble(0x11, 0xF0)] = n
-	// // n.edges[getNibble(0x11, 0xF0)] = node{prefix: []byte{0x21, 0x11}, hmask: 0XF0, tmask: 0x0F, props: 0x0002}
-	// n.edges[getNibble(0x11, 0x0F)] = node{prefix: []byte{0x11}, hmask: 0x0F, tmask: 0x0F, props: 0x0002}
+// func main() {
+// 	// t := NewUPTrie()
+// 	// t.Put([]byte{0x11, 0x11, 0x11, 0x21}, 0)
+// 	// t.Put([]byte{0x11, 0x12, 0x11}, 1)
+// 	// r := node{edges: make(edges, 16)}
+// 	// // n := node{prefix: []byte{0x11, 0x11, 0x11}, hmask: 0XF0, tmask: 0x0F, edges: make(edges, 16), props: 0x0001}
+// 	// n := node{prefix: []byte{0x11, 0x22}, hmask: 0xF0, tmask: 0x0F, edges: make(edges, 16), props: 0x0001}
+// 	// r.edges[getNibble(0x11, 0xF0)] = n
+// 	// // n.edges[getNibble(0x11, 0xF0)] = node{prefix: []byte{0x21, 0x11}, hmask: 0XF0, tmask: 0x0F, props: 0x0002}
+// 	// n.edges[getNibble(0x11, 0x0F)] = node{prefix: []byte{0x11}, hmask: 0x0F, tmask: 0x0F, props: 0x0002}
 
-	// // r.get([]byte{0x11, 0x11, 0x11}, 0xF0)
-	// r.get([]byte{0x11}, 0xF0)
+// 	// // r.get([]byte{0x11, 0x11, 0x11}, 0xF0)
+// 	// r.get([]byte{0x11}, 0xF0)
 
-	t := NewUPTrie()
-	t.Put([]byte("remember"), 0x0001)
-	t.Put([]byte("remain"), 0x0002)
-	t.Put([]byte("rem"), 0x0004)
-	// t.Put([]byte("re"), 0x0008)
-	// t.Get([]byte("rem"))
-	pp.Println(t)
-	// pp.Println(t.Get([]byte("r")).All())
+// 	t := NewUPTrie()
+// 	t.Put([]byte("remember"), 0x0001)
+// 	t.Put([]byte("remain"), 0x0002)
+// 	t.Put([]byte("rem"), 0x0004)
+// 	// t.Put([]byte("re"), 0x0008)
+// 	// t.Get([]byte("rem"))
+// 	// pp.Println(t)
+// 	pp.Println(t.Get([]byte("r")).All())
 
-	// q := NewQueue(16)
-	// for i := 0; i < 33; i++ {
-	// 	pp.Println(i)
-	// 	q = q.Enqueue(&node{})
-	// }
-	// q = q.Enqueue(&node{})
-	// ns := []*node{nil}
-	// pp.Println(q.Dequeue(ns))
-	// pp.Println(ns)
-}
+// 	// q := NewQueue(16)
+// 	// for i := 0; i < 33; i++ {
+// 	// 	pp.Println(i)
+// 	// 	q = q.Enqueue(&node{})
+// 	// }
+// 	// q = q.Enqueue(&node{})
+// 	// ns := []*node{nil}
+// 	// pp.Println(q.Dequeue(ns))
+// 	// pp.Println(ns)
+// }
 
 var TruncFreq int = 33
 
@@ -108,10 +108,12 @@ func (n *node) All() []*node {
 	for q, i := q.Dequeue(ns); i > 0; q, i = q.Dequeue(ns) {
 		pp.Println(i)
 		for _, n := range ns[0].edges {
+			// pp.Println(n)
+			if n != nil {
+				q = q.Enqueue(n)
+			}
 			if n != nil && n.leaf {
 				all = append(all, n)
-			} else if n != nil {
-				q = q.Enqueue(n)
 			}
 		}
 	}
@@ -152,21 +154,22 @@ func (n *node) chop(brk int, msk byte, off int) bool {
 }
 
 func (prv *node) put(n *node) {
+	// pp.Println("PUT", n.prefix)
 	for frm, brk, msk, off := walk(prv, n.prefix, n.hmask); brk >= 0 ; frm, brk, msk, off = walk(frm, n.prefix, n.hmask) {
 		// SPLIT EXISTING
 		if tail := frm.split(brk, msk, off); tail != nil {
-			pp.Println("SPLIT", tail)
+			// pp.Println("SPLIT", tail)
 			frm.edges.add(tail)
 		}
 		// MATCH
 		if !n.chop(brk, msk, off) {
-			pp.Println("MATCH", n)
+			// pp.Println("MATCH", n)
 			frm.leaf = true
 			frm.props |= n.props
 			return
 		// NO MATCH
 		} else {
-			pp.Println("NO MATCH")
+			// pp.Println("NO MATCH", frm, n)
 			prv = frm
 		}
 	}
