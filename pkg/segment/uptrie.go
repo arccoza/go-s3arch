@@ -127,7 +127,9 @@ func (e edges) add(n *node) {
 }
 
 func (head *node) split(brk int, msk byte, off int) (tail *node) {
-	if brk < len(head.prefix) {
+	// if brk < len(head.prefix) {
+	if last := len(head.prefix)-1; (brk + off < last) || (brk + off == last && msk > head.tmask) {
+		// if !(brk == (len(head.prefix) - 1) && msk > head.tmask) { return tail }
 		tail = &node{
 			prefix: head.prefix[brk + off:],
 			hmask: ^msk,
@@ -145,7 +147,8 @@ func (head *node) split(brk int, msk byte, off int) (tail *node) {
 }
 
 func (n *node) chop(brk int, msk byte, off int) bool {
-	if brk < len(n.prefix) {
+	// if brk < len(n.prefix) {
+	if last := len(n.prefix)-1; (brk + off < last) || (brk + off == last && msk > n.tmask) {
 		n.prefix = n.prefix[brk + off:]
 		n.hmask = ^msk
 		return true
@@ -154,6 +157,13 @@ func (n *node) chop(brk int, msk byte, off int) bool {
 }
 
 func (prv *node) put(n *node) {
+	defer func() {
+		if err := recover(); err != nil {
+			pp.Println("RECOVER")
+			pp.Println(prv)
+			panic(err)
+		}
+	}()
 	// pp.Println("PUT", n.prefix)
 	for frm, brk, msk, off := walk(prv, n.prefix, n.hmask); brk >= 0 ; frm, brk, msk, off = walk(frm, n.prefix, n.hmask) {
 		// SPLIT EXISTING
@@ -169,8 +179,9 @@ func (prv *node) put(n *node) {
 			return
 		// NO MATCH
 		} else {
-			// pp.Println("NO MATCH", frm, n)
+			// pp.Println("NO MATCH", frm, n, brk)
 			prv = frm
+			// break
 		}
 	}
 
@@ -201,6 +212,7 @@ func (rt *node) get(key []byte, nib byte) *node {
 func walk(from *node, key []byte, nib byte) (*node, int, byte, int) {
 	if len(key) == 0 { return nil, -1, nib, 0 }
 	idx := getNibble(key[0], nib)
+	if from.edges == nil { return nil, -1, nib, 0 }
 	n := from.edges[idx]
 	if n == nil { return nil, -1, nib, 0 }
 	// if len(n.prefix) == 0 { return nil, -1, nib, 0 }
